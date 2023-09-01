@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "MUD-DarkRift2-Shared": {
+      "commandName": "Project"
+    },
+    "AreaGenerator": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Users\\burke\\source\\repos\\MUD-DarkRift2\\AreaGenerator\\bin\\Debug\\net5.0\\AreaGenerator.exe"
+    }
+  }
+}
