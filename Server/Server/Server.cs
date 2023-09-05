@@ -92,6 +92,12 @@ namespace MUD
                 {
                     OnLoginRecieve(message, e);
                 }
+
+                // If the message was a player update request
+                if (message.Tag == (ushort)Tags.Tags.PLAYER_UPDATE)
+                {
+                    OnPlayerUpdateRecieve(e);
+                }
             }
         }
 
@@ -108,23 +114,7 @@ namespace MUD
 
                     PlayerManager.instance.HandleCommand(player, command);
 
-                    player = PlayerManager.instance.GetPlayer(e.Client.ID);
-                    PlayerManager.instance.SendToClient(
-                        e.Client.ID,
-                        Tags.Tags.PLAYER_UPDATE,
-                        player);
-
-                    NetRoom room = Database.instance.GetRoomFromPlayer(player.Name);
-                    PlayerManager.instance.SendToClient(
-                        e.Client.ID,
-                        Tags.Tags.ROOM,
-                        room);
-
-                    NetArea area = Database.instance.GetAreaFromPlayer(player.Name);
-                    PlayerManager.instance.SendToClient(
-                        e.Client.ID,
-                        Tags.Tags.AREA,
-                        area);
+                    PlayerManager.instance.SendPlayerInfo(e.Client.ID);
                 }
             }
         }
@@ -175,32 +165,17 @@ namespace MUD
                         e.Client.SendMessage(m, SendMode.Reliable);
                     }
 
-                    // Get player information and send it to the client
+                    // Get player information
                     NetPlayer player = PlayerManager.instance.GetPlayer(e.Client.ID);
-                    PlayerManager.instance.SendToClient(
-                        e.Client.ID,
-                        Tags.Tags.PLAYER_UPDATE,
-                        player);
-
-                    NetRoom room = Database.instance.GetRoomFromPlayer(player.Name);
-                    PlayerManager.instance.SendToClient(
-                        e.Client.ID,
-                        Tags.Tags.ROOM,
-                        room);
-
-
-                    // TODO: Enemies and Combat
-
-
-                    NetArea area = Database.instance.GetAreaFromPlayer(player.Name);
-                    PlayerManager.instance.SendToClient(
-                        e.Client.ID,
-                        Tags.Tags.AREA,
-                        area);
 
                     logger.Info(player.Name + " has logged in.");
                 }
             }
+        }
+
+        void OnPlayerUpdateRecieve(MessageReceivedEventArgs e)
+        {
+            PlayerManager.instance.SendPlayerInfo(e.Client.ID);
         }
 
     }

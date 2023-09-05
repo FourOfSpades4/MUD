@@ -10,7 +10,14 @@ public class SceneHandler : MonoBehaviour
     [SerializeField] private TMP_Text _areaText;
 
     void Awake() {
-        Instance = this;
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+        }
+        else {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
     }
 
     public void UpdateScene(string str) {

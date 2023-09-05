@@ -54,12 +54,33 @@ namespace MUD.Managers
         }
 
         // Get the Player with the corresponding Client ID
-        public NetPlayer GetPlayer(int id)
+        public NetPlayer GetPlayer(ushort id)
         {
             if (players.ContainsKey(id))
                 return players[id].Item2;
 
             return null;
+        }
+
+        public void SendPlayerInfo(ushort id)
+        {
+            NetPlayer player = GetPlayer(id);
+            PlayerManager.instance.SendToClient(
+                id,
+                Tags.Tags.PLAYER_UPDATE,
+                player);
+
+            NetRoom room = Database.instance.GetRoomFromPlayer(player.Name);
+            PlayerManager.instance.SendToClient(
+                id,
+                Tags.Tags.ROOM,
+                room);
+
+            NetArea area = Database.instance.GetAreaFromPlayer(player.Name);
+            PlayerManager.instance.SendToClient(
+                id,
+                Tags.Tags.AREA,
+                area);
         }
 
         // Send Message to Given Client ID

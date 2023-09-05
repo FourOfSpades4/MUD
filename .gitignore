@@ -106,6 +106,9 @@ Server/[Bb]in/
 Server/[Oo]bj/
 Server/[Ll]og/
 Server/[Ll]ogs/
+Server/MUD-DarkRift2/obj/
+Server/Tags/obj/
+
 
 # Visual Studio 2015/2017 cache/options directory
 Server/.vs/

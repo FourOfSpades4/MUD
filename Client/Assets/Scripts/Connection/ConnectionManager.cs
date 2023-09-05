@@ -18,12 +18,14 @@ namespace NetworkConnection
         public string Token { get; private set; }
 
         void Awake() {
-            if (Instance != null) {
+            if (Instance != null)
+            {
                 Destroy(gameObject);
             }
-
-            Instance = this; 
-            DontDestroyOnLoad(this); 
+            else {
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
         }
 
         void Start() {
@@ -53,8 +55,11 @@ namespace NetworkConnection
                     if (m.Tag == (ushort)Tags.TOKEN) {
                         Verification key = reader.ReadSerializable<Verification>();
                         Token = key.key;
+
                         if (Token != "")
                             SceneManager.LoadScene("MainScene");
+
+                        SendPlayerUpdateRequest();
                     }
                     if (m.Tag == (ushort)Tags.CHAT) {
                         ChatResponse chat = reader.ReadSerializable<ChatResponse>();
@@ -88,6 +93,15 @@ namespace NetworkConnection
                 return -3;
             }
             return 0;
+        }
+
+        public void SendPlayerUpdateRequest() {
+            using (DarkRiftWriter newPlayerWriter = DarkRiftWriter.Create())
+            {
+                using (Message message = Message.Create((ushort)Tags.PLAYER_UPDATE, newPlayerWriter)) {
+                    ConnectionManager.Instance.Client.SendMessage(message, SendMode.Reliable);
+                }
+            }
         }
 
         public void SendLoginRequest(string user, string pass) {

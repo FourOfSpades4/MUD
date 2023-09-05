@@ -11,7 +11,7 @@
             CHAT = 4,
             AREA = 5,
             ROOM = 6,
-            PLAYER_UPDATE = 7
+            PLAYER_UPDATE = 7 
         }
     }
 }
