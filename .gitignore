@@ -108,6 +108,13 @@ Server/[Ll]og/
 Server/[Ll]ogs/
 Server/MUD-DarkRift2/obj/
 Server/Tags/obj/
+Server/Tags/obj/
+Server/Server/[Oo]bj/
+Server/Server/[Bb]in/
+Server/Shared/[Oo]bj/
+Server/Shared/[Bb]in/
+Server/AreaGenerator/[Oo]bj/
+Server/AreaGenerator/[Bb]in/
 
 
 # Visual Studio 2015/2017 cache/options directory
