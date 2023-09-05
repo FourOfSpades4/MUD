@@ -12,29 +12,32 @@ namespace MUD.Net
     public abstract class NetCharacter : IDarkRiftSerializable
     {
         public string Name { get; protected set; }
-        public Passive[] Passives { get; protected set; }
-        public Active[] Actives { get; protected set; }
+        public NetPassive[] Passives { get; protected set; }
+        public NetActive[] Actives { get; protected set; }
+        public CharacterType type;
+
+        public enum CharacterType { PLAYER, ENEMY }
 
         public NetCharacter()
         {
-            Passives = new Passive[Settings.passiveSlots];
-            Actives = new Active[Settings.activeSlots];
+            Passives = new NetPassive[Settings.passiveSlots];
+            Actives = new NetActive[Settings.activeSlots];
 
             for (int i = 0; i < 5; i++)
             {
-                Passives[i] = Passive.CreatePassive(-1, "", "");
+                Passives[i] = NetPassive.CreatePassive(-1, "", "");
             }
 
             for (int i = 0; i < 5; i++)
             {
-                Actives[i] = Active.CreateActive(-1, "", "", 0, 0);
+                Actives[i] = NetActive.CreateActive(-1, "", "", 0, 0);
             }
         }
         public virtual void Deserialize(DeserializeEvent e)
         {
             Name = e.Reader.ReadString();
-            Passives = e.Reader.ReadSerializables<Passive>();
-            Actives = e.Reader.ReadSerializables<Active>();
+            Passives = e.Reader.ReadSerializables<NetPassive>();
+            Actives = e.Reader.ReadSerializables<NetActive>();
         }
 
         public virtual void Serialize(SerializeEvent e)

@@ -9,6 +9,8 @@ namespace MUD.Net
 {
     public class NetEnemy : NetCharacter
     {
+        private static int currentID = 0;
+        public int ID { get; private set; }
         public string Description { get; private set; }
         public string EnterCombatText { get; private set; }
         public string RoomEnterText { get; private set; }
@@ -25,6 +27,10 @@ namespace MUD.Net
             e.EnterCombatText = enterCombatText;
             e.RoomEnterText = roomEnterText;
             e.InstanceDrops = drops;
+            e.type = CharacterType.ENEMY;
+
+            e.ID = currentID;
+            currentID++;
 
             return e;
         }
@@ -32,6 +38,8 @@ namespace MUD.Net
         public override void Deserialize(DeserializeEvent e)
         {
             base.Deserialize(e);
+
+            ID = e.Reader.ReadInt32();
             Description = e.Reader.ReadString();
             EnterCombatText = e.Reader.ReadString();
             RoomEnterText = e.Reader.ReadString();
@@ -40,6 +48,8 @@ namespace MUD.Net
         public override void Serialize(SerializeEvent e)
         {
             base.Serialize(e);
+
+            e.Writer.Write(ID);
             e.Writer.Write(Description);
             e.Writer.Write(EnterCombatText);
             e.Writer.Write(RoomEnterText);

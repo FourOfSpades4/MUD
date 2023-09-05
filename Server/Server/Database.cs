@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Threading.Channels;
 using MUD.Net;
 using MUD.Managers;
+using MUD.Ability;
 
 namespace MUD.SQL
 {
@@ -858,13 +859,13 @@ namespace MUD.SQL
                                 if (!dropReader.IsDBNull(1))
                                 {
                                     int passiveID = dropReader.GetInt32(1);
-                                    Passive passive = AbilityManager.instance.GetPassive(passiveID);
+                                    NetPassive passive = AbilityManager.instance.GetPassive(passiveID).GetNetPassive();
                                     passiveDrops.Add(PassiveDrop.CreatePassiveDrop(passive, chance));
                                 }
                                 if (!dropReader.IsDBNull(2))
                                 {
                                     int activeID = dropReader.GetInt32(2);
-                                    Active active = AbilityManager.instance.GetActive(activeID);
+                                    NetActive active = AbilityManager.instance.GetActive(activeID).GetNetActive();
                                     activeDrops.Add(ActiveDrop.CreateActiveDrop(active, chance));
                                 }
                                 if (!dropReader.IsDBNull(3))
@@ -920,8 +921,8 @@ namespace MUD.SQL
 
                         NetItem item = NetItem.CreateItem(reader.GetString(1), reader.GetString(2),
                             (NetItem.ItemType)reader.GetInt32(3), reader.GetBoolean(4), 
-                            AbilityManager.instance.GetPassive(reader.GetInt32(5)), 
-                            AbilityManager.instance.GetActive(reader.GetInt32(6)),
+                            AbilityManager.instance.GetPassive(reader.GetInt32(5)).GetNetPassive(), 
+                            AbilityManager.instance.GetActive(reader.GetInt32(6)).GetNetActive(),
                             reader.GetInt32(7), reader.GetInt32(8), reader.GetDouble(9), reader.GetInt32(10), 
                             reader.GetDouble(11), reader.GetDouble(12), reader.GetDouble(13), reader.GetDouble(14),
                             reader.GetDouble(15), reader.GetInt32(16), reader.GetDouble(17), reader.GetDouble(18), 
@@ -955,7 +956,7 @@ namespace MUD.SQL
                     {
                         int id = reader.GetInt32(0);
 
-                        Active active = Active.CreateActive(id,
+                        Active active = new Active(id,
                             reader.GetString(1), reader.GetString(2),
                             reader.GetInt32(3), reader.GetInt32(4));
                         abilityManager.AddActive(id, active);
@@ -974,7 +975,7 @@ namespace MUD.SQL
                     {
                         int id = reader.GetInt32(0);
 
-                        Passive passive = Passive.CreatePassive(id,
+                        Passive passive = new Passive(id,
                             reader.GetString(1), reader.GetString(2));
                         abilityManager.AddPassive(id, passive);
                     }

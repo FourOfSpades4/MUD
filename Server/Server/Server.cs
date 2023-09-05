@@ -32,10 +32,15 @@ namespace MUD
             ClientManager.ClientDisconnected += OnClientDisconnected;
             rsa = new RSAEncryption();
 
-            System.Timers.Timer aTimer = new System.Timers.Timer(30000);
-            aTimer.Elapsed += UpdateRoomModifers;
-            aTimer.AutoReset = true;
-            aTimer.Enabled = true;
+            System.Timers.Timer timer = new System.Timers.Timer(30000);
+            timer.Elapsed += UpdateRoomModifers;
+            timer.AutoReset = true;
+            timer.Enabled = true;
+
+            timer = new System.Timers.Timer(50);
+            timer.Elapsed += Tick;
+            timer.AutoReset = true;
+            timer.Enabled = true;
             // Database.instance.AddPlayerCredentials("FourOfSpades", Authentication.Hash(""));
 
             logger = Logger;
@@ -48,6 +53,11 @@ namespace MUD
         private static void UpdateRoomModifers(object source, ElapsedEventArgs e)
         {
             Database.instance.UpdateRoomModifers();
+        }
+
+        private static void Tick(object source, ElapsedEventArgs e)
+        {
+            CombatManager.instance.TickCombats();
         }
 
         // Add the MessageRecieved hooks to every client that connects. 

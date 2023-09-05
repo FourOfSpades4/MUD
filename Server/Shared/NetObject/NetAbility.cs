@@ -28,14 +28,14 @@ namespace MUD.Net
         }
 
     }
-    public class Active : NetAbility
+    public class NetActive : NetAbility
     {
         public int Cooldown { get; private set; }
         public int Uses { get; private set; }
-        public static Active CreateActive(int id, string name, string desc, 
+        public static NetActive CreateActive(int id, string name, string desc, 
             int cooldown, int uses)
         {
-            Active a = new Active();
+            NetActive a = new NetActive();
 
             a.ID = id;
             a.Name = name;
@@ -59,12 +59,11 @@ namespace MUD.Net
         }
     }
 
-    public class Passive : NetAbility
+    public class NetPassive : NetAbility
     {
-
-        public static Passive CreatePassive(int id, string name, string desc)
+        public static NetPassive CreatePassive(int id, string name, string desc)
         {
-            Passive p = new Passive();
+            NetPassive p = new NetPassive();
 
             p.ID = id;
             p.Name = name;

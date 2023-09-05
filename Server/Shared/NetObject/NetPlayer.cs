@@ -11,17 +11,20 @@ namespace MUD.Net
 {
     public class NetPlayer : NetCharacter
     {
+        public ushort ID { get; private set; }
         public string Title { get; private set; }
         public string Token { get; private set; }
         public Boolean InCombat { get; private set; }
 
-        public static NetPlayer CreatePlayer(string username)
+        public static NetPlayer CreatePlayer(string username, ushort id)
         {
             NetPlayer p = new NetPlayer();
 
             p.Name = username;
+            p.ID = id;
             p.Title = "";
             p.InCombat = false;
+            p.type = CharacterType.PLAYER;
 
             return p;
         }

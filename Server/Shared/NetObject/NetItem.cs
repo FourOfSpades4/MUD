@@ -23,8 +23,8 @@ namespace MUD.Net
         public ItemType Type { get; private set; }
         public bool Stackable { get; private set; }
 
-        public Passive AppliesPassive { get; private set; }
-        public Active AppliesActive { get; private set; }
+        public NetPassive AppliesPassive { get; private set; }
+        public NetActive AppliesActive { get; private set; }
 
         public int HealthIncrease { get; private set; }
         public int HealthOnKill { get; private set; }
@@ -58,7 +58,7 @@ namespace MUD.Net
         public double DamageWhileLowHealth { get; private set; }
 
         public static NetItem CreateItem(string name, string desc, ItemType type, bool stackable,
-            Passive passive = null, Active active = null,
+            NetPassive passive = null, NetActive active = null,
             int health = 0, int healthOnKill = 0, double percentageHealthOnHit = 0, int flatHealthOnHit = 0, 
             double critChance = 0, double critDamage = 0, 
             double resist = 0, double bleedResist = 0, double posionResist = 0, 
@@ -119,8 +119,8 @@ namespace MUD.Net
             Type = (ItemType)e.Reader.ReadInt32();
             Stackable = e.Reader.ReadBoolean();
 
-            AppliesPassive = e.Reader.ReadSerializable<Passive>();
-            AppliesActive = e.Reader.ReadSerializable<Active>();
+            AppliesPassive = e.Reader.ReadSerializable<NetPassive>();
+            AppliesActive = e.Reader.ReadSerializable<NetActive>();
 
             HealthIncrease = e.Reader.ReadInt32();
             HealthOnKill = e.Reader.ReadInt32();

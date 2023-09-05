@@ -102,10 +102,10 @@ namespace MUD.Net
 
     public class PassiveDrop : IDarkRiftSerializable
     {
-        public Passive Passive { get; private set; }
+        public NetPassive Passive { get; private set; }
         public double Chance { get; private set; }
 
-        public static PassiveDrop CreatePassiveDrop(Passive passive, double chance)
+        public static PassiveDrop CreatePassiveDrop(NetPassive passive, double chance)
         {
             PassiveDrop d = new PassiveDrop();
 
@@ -117,7 +117,7 @@ namespace MUD.Net
 
         public virtual void Deserialize(DeserializeEvent e)
         {
-            Passive = e.Reader.ReadSerializable<Passive>();
+            Passive = e.Reader.ReadSerializable<NetPassive>();
             Chance = e.Reader.ReadDouble();
         }
 
@@ -130,10 +130,10 @@ namespace MUD.Net
 
     public class ActiveDrop : IDarkRiftSerializable
     {
-        public Active Active { get; private set; }
+        public NetActive Active { get; private set; }
         public double Chance { get; private set; }
 
-        public static ActiveDrop CreateActiveDrop(Active active, double chance)
+        public static ActiveDrop CreateActiveDrop(NetActive active, double chance)
         {
             ActiveDrop d = new ActiveDrop();
 
@@ -145,7 +145,7 @@ namespace MUD.Net
 
         public virtual void Deserialize(DeserializeEvent e)
         {
-            Active = e.Reader.ReadSerializable<Active>();
+            Active = e.Reader.ReadSerializable<NetActive>();
             Chance = e.Reader.ReadDouble();
         }
 
