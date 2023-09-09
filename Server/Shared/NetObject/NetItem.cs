@@ -5,19 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using MUD.Items;
 
 namespace MUD.Net
 {
     public class NetItem : IDarkRiftSerializable
     {
-        public enum ItemType
-        {
-            CHEST,
-            LEGGINGS,
-            HELM,
-            BOOTS
-        }
-
         public string Name { get; private set; }
         public string Description { get; private set; }
         public ItemType Type { get; private set; }
@@ -195,5 +188,17 @@ namespace MUD.Net
             e.Writer.Write(DamageWhileMaxHealth);
             e.Writer.Write(DamageWhileLowHealth);
         }
+    }
+}
+namespace MUD.Items
+{
+    public enum ItemType
+    {
+        CHEST = 0,
+        LEGGINGS = 1,
+        HELM = 2,
+        BOOTS = 3,
+        RUNE = 4,
+        SCROLL = 5
     }
 }

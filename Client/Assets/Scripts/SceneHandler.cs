@@ -9,6 +9,8 @@ public class SceneHandler : MonoBehaviour
     [SerializeField] private TMP_Text _sceneText;
     [SerializeField] private TMP_Text _areaText;
 
+
+
     void Awake() {
         if (Instance != null)
         {

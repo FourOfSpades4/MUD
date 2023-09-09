@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MUD.Characters;
 using MUD.Net;
 
 namespace MUD.Managers
@@ -15,31 +16,31 @@ namespace MUD.Managers
     public class EnemyManager
     {
         public static EnemyManager instance = new EnemyManager();
-        private Dictionary<int, List<NetEnemy>> enemies;
+        private Dictionary<int, List<Enemy>> enemies;
 
 
         public EnemyManager()
         {
-            enemies = new Dictionary<int, List<NetEnemy>>();
+            enemies = new Dictionary<int, List<Enemy>>();
         }
 
         public void ClearEnemies()
         {
-            foreach (List<NetEnemy> roomEnemies in enemies.Values)
+            foreach (List<Enemy> roomEnemies in enemies.Values)
             {
                 roomEnemies.Clear();
             }
         }
 
-        public void AddEnemy(int roomID, NetEnemy enemy)
+        public void AddEnemy(int roomID, Enemy enemy)
         {
             if (!enemies.ContainsKey(roomID))
-                enemies[roomID] = new List<NetEnemy>();
+                enemies[roomID] = new List<Enemy>();
 
             enemies[roomID].Add(enemy);
         }
 
-        public List<NetEnemy> GetEnemies(int roomID)
+        public List<Enemy> GetEnemies(int roomID)
         {
             if (enemies.ContainsKey(roomID))
                 return enemies[roomID];

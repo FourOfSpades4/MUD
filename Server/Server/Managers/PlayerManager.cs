@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using MUD.Net;
 using MUD.Ability;
 using MUD.SQL;
+using MUD.Combat;
+using MUD.Characters;
 
 namespace MUD.Managers
 {
@@ -22,15 +24,15 @@ namespace MUD.Managers
     {
         public static PlayerManager instance = new PlayerManager();
 
-        private Dictionary<int, Tuple<IClient, NetPlayer>> players = new Dictionary<int, Tuple<IClient, NetPlayer>>();
+        private Dictionary<int, Tuple<IClient, Player>> players = new Dictionary<int, Tuple<IClient, Player>>();
         
         // Update the player token, and add the player from the database to the dictionary of logged in players.
         public void LoginPlayer(IClient client, string username, ushort id, string token)
         {
-            NetPlayer player = NetPlayer.CreatePlayer(username, id);
+            Player player = new Player(username, id, Settings.activeSlots, Settings.passiveSlots);
             player.SetToken(token);
             Database.instance.UpdatePlayerFromDB(player);
-            players[id] = new Tuple<IClient, NetPlayer>(client, player);
+            players[id] = new Tuple<IClient, Player>(client, player);
         }
 
         // Remove the player from memory.
@@ -55,7 +57,7 @@ namespace MUD.Managers
         }
 
         // Get the Player with the corresponding Client ID
-        public NetPlayer GetPlayer(ushort id)
+        public Player GetPlayer(ushort id)
         {
             if (players.ContainsKey(id))
                 return players[id].Item2;
@@ -64,22 +66,21 @@ namespace MUD.Managers
         }
 
         // For Calling Events On All Passives of Player
-        public void ForEach(NetPlayer player, Action<Passive> action)
+        public void ForEach(Player player, Action<Passive> action)
         {
-            foreach (NetPassive netPassive in player.Passives)
+            foreach (Passive passive in player.Passives)
             {
-                Passive passive = AbilityManager.instance.GetPassive(netPassive.ID);
-                action(passive);
+                 action(passive);
             }
         }
 
         public void SendPlayerInfo(ushort id)
         {
-            NetPlayer player = GetPlayer(id);
+            Player player = GetPlayer(id);
             PlayerManager.instance.SendToClient(
                 id,
                 Tags.Tags.PLAYER_UPDATE,
-                player);
+                player.Net());
 
             NetRoom room = Database.instance.GetRoomFromPlayer(player.Name);
             PlayerManager.instance.SendToClient(
@@ -118,7 +119,7 @@ namespace MUD.Managers
         // Send Message to All Clients
         public void SendToAll(Tags.Tags t, IDarkRiftSerializable obj, SendMode mode = SendMode.Reliable)
         {
-            foreach (KeyValuePair<int, Tuple<IClient, NetPlayer>> connectedClient in players)
+            foreach (KeyValuePair<int, Tuple<IClient, Player>> connectedClient in players)
                 using (Message m = Message.Create<IDarkRiftSerializable>((ushort)t, obj))
                     connectedClient.Value.Item1.SendMessage(m, mode);
         }
@@ -127,7 +128,7 @@ namespace MUD.Managers
         public void SendToAllExcept(ushort id, Tags.Tags t, IDarkRiftSerializable obj, SendMode mode = SendMode.Reliable)
         {
             using (Message m = Message.Create<IDarkRiftSerializable>((ushort)t, obj))
-                foreach (KeyValuePair<int, Tuple<IClient, NetPlayer>> connectedClient in players)
+                foreach (KeyValuePair<int, Tuple<IClient, Player>> connectedClient in players)
                     if (connectedClient.Key != id)
                         connectedClient.Value.Item1.SendMessage(m, mode);
         }
@@ -135,12 +136,15 @@ namespace MUD.Managers
         // Handle a command typed into a client. 
         // Takes in the Player object and the NetCommand containing the actual 
         // command in plaintext.
-        public Error HandleCommand(NetPlayer player, NetCommand command)
+        public Error HandleCommand(Player player, NetCommand command)
         {
             if (CommandSettings.leftCommands.Contains(command.command.ToLower().Trim()))
             {
                 if (Database.instance.GetRoomFromPlayer(player.Name).Left == -1)
-                    return Error.CreateError(MUD.ErrorType.DIRECTION_DOES_NOT_EXIST);
+                    return Error.CreateError(ErrorType.DIRECTION_DOES_NOT_EXIST);
+
+                if (player.InCombat)
+                    return Error.CreateError(ErrorType.MOVE_IN_COMBAT);
 
                 Database.instance.MovePlayerToRoom(player.Name, Database.instance.GetRoomFromPlayer(player.Name).Left);
                 OnMoveToRoom(player);
@@ -149,7 +153,10 @@ namespace MUD.Managers
             else if (CommandSettings.rightCommands.Contains(command.command.ToLower().Trim()))
             {
                 if (Database.instance.GetRoomFromPlayer(player.Name).Right == -1)
-                    return Error.CreateError(MUD.ErrorType.DIRECTION_DOES_NOT_EXIST);
+                    return Error.CreateError(ErrorType.DIRECTION_DOES_NOT_EXIST);
+
+                if (player.InCombat)
+                    return Error.CreateError(ErrorType.MOVE_IN_COMBAT);
 
                 Database.instance.MovePlayerToRoom(player.Name, Database.instance.GetRoomFromPlayer(player.Name).Right);
                 OnMoveToRoom(player);
@@ -158,7 +165,10 @@ namespace MUD.Managers
             else if (CommandSettings.upCommands.Contains(command.command.ToLower().Trim()))
             {
                 if (Database.instance.GetRoomFromPlayer(player.Name).Up == -1)
-                    return Error.CreateError(MUD.ErrorType.DIRECTION_DOES_NOT_EXIST);
+                    return Error.CreateError(ErrorType.DIRECTION_DOES_NOT_EXIST);
+
+                if (player.InCombat)
+                    return Error.CreateError(ErrorType.MOVE_IN_COMBAT);
 
                 Database.instance.MovePlayerToRoom(player.Name, Database.instance.GetRoomFromPlayer(player.Name).Up);
                 OnMoveToRoom(player);
@@ -167,7 +177,10 @@ namespace MUD.Managers
             else if (CommandSettings.downCommands.Contains(command.command.ToLower().Trim()))
             {
                 if (Database.instance.GetRoomFromPlayer(player.Name).Down == -1)
-                    return Error.CreateError(MUD.ErrorType.DIRECTION_DOES_NOT_EXIST);
+                    return Error.CreateError(ErrorType.DIRECTION_DOES_NOT_EXIST);
+
+                if (player.InCombat)
+                    return Error.CreateError(ErrorType.MOVE_IN_COMBAT);
 
                 Database.instance.MovePlayerToRoom(player.Name, Database.instance.GetRoomFromPlayer(player.Name).Down);
                 OnMoveToRoom(player);
@@ -176,10 +189,17 @@ namespace MUD.Managers
             return null;
         }
 
-        public void OnMoveToRoom(NetPlayer player)
+        public void OnMoveToRoom(Player player)
         {
             CombatInstanceEventArgs c = new CombatInstanceEventArgs();
             ForEach(player, (Passive p) => p.OnRoomEnter(c));
+
+            NetRoom room = Database.instance.GetRoomFromPlayer(player.Name);
+
+            if (EnemyManager.instance.GetEnemies(room.ID).Count > 0)
+            {
+                CombatManager.instance.StartCombat(player, room.ID);
+            }
         }
     }
 }

@@ -15,8 +15,17 @@ namespace MUD.Managers
     public class AbilityManager
     {
         public static AbilityManager instance = new AbilityManager();
-        private Dictionary<int, Passive> passives = new Dictionary<int, Passive>();
-        private Dictionary<int, Active> actives = new Dictionary<int, Active>();
+        private Dictionary<int, Passive> passives;
+        private Dictionary<int, Active> actives;
+        private List<AbilitySet> abilities;
+
+        public AbilityManager()
+        {
+            passives = new Dictionary<int, Passive>();
+            actives = new Dictionary<int, Active>();
+            passives.Add(0, new Passive(0, "", ""));
+            actives.Add(0, new Active(0, "", "", 0, 0));
+        }
 
         public void AddPassive(int id, Passive passive)
         {
@@ -45,5 +54,13 @@ namespace MUD.Managers
             }
             return null;
         }
+    }
+}
+
+namespace MUD.Ability {
+    public interface AbilitySet
+    {
+        public void UpdatePassive(int id, Passive passive);
+        public bool HasPassive(int id);
     }
 }

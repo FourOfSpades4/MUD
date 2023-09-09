@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using MUD.Combat;
 
 namespace MUD.Ability
 {
@@ -17,6 +18,9 @@ namespace MUD.Ability
         public int Cooldown { get; private set; }
         public int Uses { get; private set; }
 
+        public event EventHandler<CombatInstanceEventArgs> Cast;
+        // Cast += (obj, combatInstance) => Foo(obj, combatInstance, ...);
+
         public Active(int id, string name, string desc,
             int cooldown, int uses)
         {
@@ -27,10 +31,20 @@ namespace MUD.Ability
             Uses = uses;
         }
 
-        public NetActive GetNetActive()
+        public NetActive Net()
         {
-            return NetActive.CreateActive(ID, Name, Description, Cooldown, Uses);
+            return NetActive.CreateActive(Name, Description, Cooldown, Uses);
         }
+
+        public void OnCast(CombatInstanceEventArgs args)
+        {
+            EventHandler<CombatInstanceEventArgs> handler = Cast;
+            if (handler != null)
+            {
+                handler(this, args);
+            }
+        }
+
     }
     public class Passive
     {
@@ -65,9 +79,9 @@ namespace MUD.Ability
             Description = desc;
         }
 
-        public NetPassive GetNetPassive()
+        public NetPassive Net()
         {
-            return NetPassive.CreatePassive(ID, Name, Description);
+            return NetPassive.CreatePassive(Name, Description);
         }
 
         public void OnRoomEnter(CombatInstanceEventArgs args)

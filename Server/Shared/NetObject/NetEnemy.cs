@@ -9,7 +9,6 @@ namespace MUD.Net
 {
     public class NetEnemy : NetCharacter
     {
-        private static int currentID = 0;
         public int ID { get; private set; }
         public string Description { get; private set; }
         public string EnterCombatText { get; private set; }
@@ -18,7 +17,10 @@ namespace MUD.Net
 
 
         public static NetEnemy CreateEnemy(string name, string description,
-            NetDrops drops, string enterCombatText = "", string roomEnterText = "")
+            NetDrops drops,
+            NetPassive[] passives, NetActive[] actives,
+            int id,
+            string enterCombatText = "", string roomEnterText = "") 
         {
             NetEnemy e = new NetEnemy();
 
@@ -27,13 +29,17 @@ namespace MUD.Net
             e.EnterCombatText = enterCombatText;
             e.RoomEnterText = roomEnterText;
             e.InstanceDrops = drops;
+
             e.type = CharacterType.ENEMY;
 
-            e.ID = currentID;
-            currentID++;
+            e.Passives = passives;
+            e.Actives = actives;
+
+            e.ID = id;
 
             return e;
         }
+
 
         public override void Deserialize(DeserializeEvent e)
         {
@@ -45,6 +51,7 @@ namespace MUD.Net
             RoomEnterText = e.Reader.ReadString();
             InstanceDrops = e.Reader.ReadSerializable<NetDrops>();
         }
+
         public override void Serialize(SerializeEvent e)
         {
             base.Serialize(e);

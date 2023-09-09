@@ -12,7 +12,7 @@ namespace MUD
         INVALID_USERNAME,
         INVALID_PASSWORD,
         DIRECTION_DOES_NOT_EXIST,
-
+        MOVE_IN_COMBAT
     }
     public class Error : IDarkRiftSerializable
     {

@@ -13,6 +13,8 @@ using System.Threading.Channels;
 using MUD.Net;
 using MUD.Managers;
 using MUD.Ability;
+using MUD.Items;
+using MUD.Characters;
 
 namespace MUD.SQL
 {
@@ -26,7 +28,7 @@ namespace MUD.SQL
         public Database()
         {
             // Get from Settings
-            startingArea = "Soulreaver Keep";
+            startingArea = Settings.startingArea;
 
             data = new SQLiteConnection("Data Source=data.db");
 
@@ -70,7 +72,7 @@ namespace MUD.SQL
                     INSERT OR REPLACE INTO titles(titleID, title) 
                         VALUES(0, $title);
                 ";
-                command.Parameters.AddWithValue("$title", "\"\"");
+                command.Parameters.AddWithValue("$title", "");
                 command.ExecuteNonQuery();
 
 
@@ -81,7 +83,7 @@ namespace MUD.SQL
                         areaName TEXT NOT NULL,
                         width INTEGER NOT NULL,
                         height INTEGER NOT NULL,
-                        startingRoomID INTEGER NOT NULL,
+                        startingRoomID INTEGER,
 
                         FOREIGN KEY (startingRoomID) 
                             REFERENCES rooms(roomID)
@@ -328,6 +330,56 @@ namespace MUD.SQL
                 ";
                 command.ExecuteNonQuery();
 
+                command.CommandText =
+                @"
+                    CREATE TABLE IF NOT EXISTS enemyActives (
+                        enemyID INTEGER NOT NULL,
+                        activeID INTEGER NOT NULL,
+                        activeSlot INTEGER NOT NULL,
+
+                        FOREIGN KEY (enemyID) 
+                            REFERENCES enemyClasses(enemyID),
+
+                        FOREIGN KEY (activeID) 
+                            REFERENCES actives(activeID)
+                    );
+                ";
+                command.ExecuteNonQuery();
+
+
+                command.CommandText =
+                @"
+                    CREATE TABLE IF NOT EXISTS enemyPassives (
+                        enemyID INTEGER NOT NULL,
+                        passiveID INTEGER NOT NULL,
+                        passiveSlot INTEGER NOT NULL,
+
+                        FOREIGN KEY (enemyID) 
+                            REFERENCES enemyClasses(enemyID),
+
+                        FOREIGN KEY (passiveID) 
+                            REFERENCES passives(passiveID)
+                    );
+                ";
+                command.ExecuteNonQuery();
+
+
+                command.CommandText =
+                @"
+                    CREATE TABLE IF NOT EXISTS enemyItems (
+                        enemyID INTEGER NOT NULL,
+                        itemID INTEGER NOT NULL,
+                        quantity INTEGER NOT NULL,
+
+                        FOREIGN KEY (enemyID) 
+                            REFERENCES enemyClasses(enemyID),
+
+                        FOREIGN KEY (itemID) 
+                            REFERENCES items(itemID)
+                    );
+                ";
+                command.ExecuteNonQuery();
+
 
                 command.CommandText =
                 @"
@@ -454,14 +506,14 @@ namespace MUD.SQL
         {
             int player = -1;
 
+            int areaID = GetAreaID(startingArea);
+            int roomID = GetAreaStartingRoom(startingArea);
+
             lock (data)
             {
                 data.Open();
 
                 var command = data.CreateCommand();
-
-                int areaID = GetAreaID(startingArea);
-                int roomID = GetAreaStartingRoom(startingArea);
 
                 command.CommandText =
                 @"
@@ -859,25 +911,25 @@ namespace MUD.SQL
                                 if (!dropReader.IsDBNull(1))
                                 {
                                     int passiveID = dropReader.GetInt32(1);
-                                    NetPassive passive = AbilityManager.instance.GetPassive(passiveID).GetNetPassive();
+                                    NetPassive passive = AbilityManager.instance.GetPassive(passiveID).Net();
                                     passiveDrops.Add(PassiveDrop.CreatePassiveDrop(passive, chance));
                                 }
                                 if (!dropReader.IsDBNull(2))
                                 {
                                     int activeID = dropReader.GetInt32(2);
-                                    NetActive active = AbilityManager.instance.GetActive(activeID).GetNetActive();
+                                    NetActive active = AbilityManager.instance.GetActive(activeID).Net();
                                     activeDrops.Add(ActiveDrop.CreateActiveDrop(active, chance));
                                 }
                                 if (!dropReader.IsDBNull(3))
                                 {
                                     int itemID = dropReader.GetInt32(3);
-                                    NetItem item = ItemManager.instance.GetItem(itemID);
+                                    NetItem item = ItemManager.instance.GetItem(itemID).Net();
                                     itemDrops.Add(ItemDrop.CreateItemDrop(item, chance));
                                 }
                             }
                         }
 
-                        NetEnemy enemy = NetEnemy.CreateEnemy(name, description, 
+                        Enemy enemy = new Enemy(name, description, 
                             NetDrops.CreateDrops(itemDrops.ToArray(), passiveDrops.ToArray(), activeDrops.ToArray()), 
                             enterCombatText, enterRoomText);
                         enemyManager.AddEnemy(roomID, enemy);
@@ -919,10 +971,10 @@ namespace MUD.SQL
                         // TODO
                         int itemID = reader.GetInt32(0);
 
-                        NetItem item = NetItem.CreateItem(reader.GetString(1), reader.GetString(2),
-                            (NetItem.ItemType)reader.GetInt32(3), reader.GetBoolean(4), 
-                            AbilityManager.instance.GetPassive(reader.GetInt32(5)).GetNetPassive(), 
-                            AbilityManager.instance.GetActive(reader.GetInt32(6)).GetNetActive(),
+                        Item item = new Item(reader.GetString(1), reader.GetString(2),
+                            (ItemType)reader.GetInt32(3), reader.GetBoolean(4), 
+                            AbilityManager.instance.GetPassive(reader.GetInt32(5)), 
+                            AbilityManager.instance.GetActive(reader.GetInt32(6)),
                             reader.GetInt32(7), reader.GetInt32(8), reader.GetDouble(9), reader.GetInt32(10), 
                             reader.GetDouble(11), reader.GetDouble(12), reader.GetDouble(13), reader.GetDouble(14),
                             reader.GetDouble(15), reader.GetInt32(16), reader.GetDouble(17), reader.GetDouble(18), 
@@ -988,14 +1040,122 @@ namespace MUD.SQL
 
 
         // TODO
-        public void UpdatePlayerFromDB(NetPlayer player)
+        public void UpdatePlayerFromDB(Player player)
         {
+            // Get Title
             player.SetTitle(GetTitleFromPlayer(player.Name));
+
+            // Get Slots
+            var command = data.CreateCommand();
+            command.CommandText =
+            @"
+                    SELECT activeSlots, passiveSlots
+                    FROM players
+                    WHERE username = $user
+                ";
+            command.Parameters.AddWithValue("$user", player.Name);
+
+            using (var reader = command.ExecuteReader())
+            {
+                reader.Read();
+                player.SetActiveSlots(reader.GetInt32(0));
+                player.SetPassiveSlots(reader.GetInt32(1));
+            }
         }
 
         public void GetInventoryFromPlayer(string player)
         {
             // SELECT items.name FROM items, inventory WHERE inventory.character_id = $player
+        }
+
+        public bool EquipPassive(int playerID, int passiveID, int slot)
+        {
+            Passive passive = AbilityManager.instance.GetPassive(passiveID);
+            Player player = PlayerManager.instance.GetPlayer((ushort)playerID);
+
+            if (passive == null || slot >= player.PassiveSlots)
+            { 
+                Server.logger.Warning(String.Format(
+                    "{0} attempted to place Passive ID {1} in slot {2}", player.Name, passiveID, slot));
+                return false;
+            }
+
+            lock (data)
+            {
+                data.Open();
+
+                var command = data.CreateCommand();
+                command.CommandText =
+                @"
+                    UPDATE playerPassives
+                    SET slot = 0
+                    WHERE playerID = $playerID and slot = $slot
+                ";
+                command.Parameters.AddWithValue("$playerID", playerID);
+                command.Parameters.AddWithValue("$slot", slot);
+                command.ExecuteNonQuery();
+
+                command = data.CreateCommand();
+                command.CommandText =
+                @"
+                    UPDATE playerPassives
+                    SET slot = $slot
+                    WHERE playerID = $playerID and passiveID = $passiveID
+                ";
+                command.Parameters.AddWithValue("$playerID", playerID);
+                command.Parameters.AddWithValue("$passiveID", passiveID);
+                command.Parameters.AddWithValue("$slot", slot);
+                command.ExecuteNonQuery();
+
+                data.Close();
+            }
+
+            return player.Equip(slot, passive);
+        }
+
+        public bool EquipActive(int playerID, int activeID, int slot)
+        {
+            Active active = AbilityManager.instance.GetActive(activeID);
+            Player player = PlayerManager.instance.GetPlayer((ushort)playerID);
+
+            if (active == null || slot >= player.ActiveSlots)
+            {
+                Server.logger.Warning(String.Format(
+                    "{0} attempted to place Active ID {1} in slot {2}", player.Name, activeID, slot));
+                return false;
+            }
+
+            lock (data)
+            {
+                data.Open();
+
+                var command = data.CreateCommand();
+                command.CommandText =
+                @"
+                    UPDATE playerActives
+                    SET slot = 0
+                    WHERE playerID = $playerID and slot = $slot
+                ";
+                command.Parameters.AddWithValue("$playerID", playerID);
+                command.Parameters.AddWithValue("$slot", slot);
+                command.ExecuteNonQuery();
+
+                command = data.CreateCommand();
+                command.CommandText =
+                @"
+                    UPDATE playerActives
+                    SET slot = $slot
+                    WHERE playerID = $playerID and activeID = $activeID
+                ";
+                command.Parameters.AddWithValue("$playerID", playerID);
+                command.Parameters.AddWithValue("$activeID", activeID);
+                command.Parameters.AddWithValue("$slot", slot);
+                command.ExecuteNonQuery();
+
+                data.Close();
+            }
+
+            return player.Equip(slot, active);
         }
     }
 }

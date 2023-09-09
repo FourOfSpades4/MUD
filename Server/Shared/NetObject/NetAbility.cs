@@ -9,20 +9,17 @@ using System.Xml.Linq;
 namespace MUD.Net
 {
     public abstract class NetAbility : IDarkRiftSerializable {
-        public int ID { get; protected set; }
         public string Name { get; protected set; }
         public string Description { get; protected set; }
 
         public void Deserialize(DeserializeEvent e)
         {
-            ID = e.Reader.ReadInt32();
             Name = e.Reader.ReadString();
             Description = e.Reader.ReadString();
 
         }
         public void Serialize(SerializeEvent e)
         {
-            e.Writer.Write(ID);
             e.Writer.Write(Name);
             e.Writer.Write(Description);
         }
@@ -32,12 +29,11 @@ namespace MUD.Net
     {
         public int Cooldown { get; private set; }
         public int Uses { get; private set; }
-        public static NetActive CreateActive(int id, string name, string desc, 
+        public static NetActive CreateActive(string name, string desc, 
             int cooldown, int uses)
         {
             NetActive a = new NetActive();
 
-            a.ID = id;
             a.Name = name;
             a.Description = desc;
             a.Cooldown = cooldown;
@@ -61,11 +57,10 @@ namespace MUD.Net
 
     public class NetPassive : NetAbility
     {
-        public static NetPassive CreatePassive(int id, string name, string desc)
+        public static NetPassive CreatePassive(string name, string desc)
         {
             NetPassive p = new NetPassive();
 
-            p.ID = id;
             p.Name = name;
             p.Description = desc;
 
@@ -74,15 +69,11 @@ namespace MUD.Net
 
         public void Deserialize(DeserializeEvent e)
         {
-            ID = e.Reader.ReadInt32();
-            Name = e.Reader.ReadString();
-            Description = e.Reader.ReadString();
+            base.Deserialize(e);
         }
         public void Serialize(SerializeEvent e)
         {
-            e.Writer.Write(ID);
-            e.Writer.Write(Name);
-            e.Writer.Write(Description);
+            base.Serialize(e);
         }
     }
 }

@@ -8,6 +8,7 @@ using MUD.Net;
 using MUD.Encryption;
 using MUD.Managers;
 using MUD.SQL;
+using MUD.Characters;
 
 namespace MUD
 {
@@ -41,13 +42,15 @@ namespace MUD
             timer.Elapsed += Tick;
             timer.AutoReset = true;
             timer.Enabled = true;
-            // Database.instance.AddPlayerCredentials("FourOfSpades", Authentication.Hash(""));
 
             logger = Logger;
 
             Database.instance.UpdateItemManager(ItemManager.instance);
             Database.instance.UpdateAbilityManager(AbilityManager.instance);
             Database.instance.UpdateEnemyManager(EnemyManager.instance);
+
+            if (Database.instance.GetPlayerID("FourOfSpades") == -1)
+                Database.instance.AddPlayerCredentials("FourOfSpades", Authentication.Hash("!"));
         }
 
         private static void UpdateRoomModifers(object source, ElapsedEventArgs e)
@@ -120,7 +123,7 @@ namespace MUD
                 // Ensure the chat message came from the correct client
                 if (PlayerManager.instance.VerifyPlayer(e.Client.ID, command.token))
                 {
-                    NetPlayer player = PlayerManager.instance.GetPlayer(e.Client.ID);
+                    Player player = PlayerManager.instance.GetPlayer(e.Client.ID);
 
                     PlayerManager.instance.HandleCommand(player, command);
 
@@ -138,7 +141,7 @@ namespace MUD
                 if (PlayerManager.instance.VerifyPlayer(e.Client.ID, chat.token))
                 {
                     // Get Player using their ID
-                    NetPlayer player = PlayerManager.instance.GetPlayer(e.Client.ID);
+                    Player player = PlayerManager.instance.GetPlayer(e.Client.ID);
 
                     // Send the chat message to everyone connected
                     ChatResponse publicChat = new ChatResponse();
@@ -176,7 +179,7 @@ namespace MUD
                     }
 
                     // Get player information
-                    NetPlayer player = PlayerManager.instance.GetPlayer(e.Client.ID);
+                    Player player = PlayerManager.instance.GetPlayer(e.Client.ID);
 
                     logger.Info(player.Name + " has logged in.");
                 }

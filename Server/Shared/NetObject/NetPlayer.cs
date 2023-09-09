@@ -11,48 +11,26 @@ namespace MUD.Net
 {
     public class NetPlayer : NetCharacter
     {
-        public ushort ID { get; private set; }
         public string Title { get; private set; }
-        public string Token { get; private set; }
-        public Boolean InCombat { get; private set; }
 
-        public static NetPlayer CreatePlayer(string username, ushort id)
+        public static NetPlayer CreatePlayer(string username, 
+            NetPassive[] passives, NetActive[] actives)
         {
             NetPlayer p = new NetPlayer();
 
             p.Name = username;
-            p.ID = id;
             p.Title = "";
-            p.InCombat = false;
             p.type = CharacterType.PLAYER;
+
+            p.Passives = passives;
+            p.Actives = actives;
 
             return p;
         }
 
-        public void SetTitle(string title)
-        {
-            Title = title;
-        }
-
-        public void SetToken(string t)
-        {
-            Token = t;
-        }
-
-        public bool VerifyToken(string t)
-        {
-            return t == Token;
-        }
-
         public override string ToString()
         {
-            return Name + " (" + Title + ")" + "     " +
-                Passives[0].ID + " | " + Passives[1].ID + " | " +
-                Passives[2].ID + " | " + Passives[3].ID + " | " +
-                Passives[4].ID + "    " +
-                Actives[0].ID + " | " + Actives[1].ID + " | " +
-                Actives[2].ID + " | " + Actives[3].ID + " | " +
-                Actives[4].ID;
+            return Name + " (" + Title + ")";
         }
 
         public override void Deserialize(DeserializeEvent e)
@@ -66,11 +44,6 @@ namespace MUD.Net
             base.Serialize(e);
 
             e.Writer.Write(Title);
-        }
-
-        public void UpdateCombatStatus(bool inCombat)
-        {
-            InCombat = inCombat;
         }
     }
 }

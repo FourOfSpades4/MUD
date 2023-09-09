@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MUD.Items;
 using MUD.Net;
 
 namespace MUD.Managers
@@ -14,14 +15,14 @@ namespace MUD.Managers
     public class ItemManager
     {
         public static ItemManager instance = new ItemManager();
-        private Dictionary<int, NetItem> items = new Dictionary<int, NetItem>();
+        private Dictionary<int, Item> items = new Dictionary<int, Item>();
 
-        public void AddItem(int id, NetItem item)
+        public void AddItem(int id, Item item)
         {
             items[id] = item;
         }
 
-        public NetItem GetItem(int id)
+        public Item GetItem(int id)
         {
             if (items.ContainsKey(id))
             {

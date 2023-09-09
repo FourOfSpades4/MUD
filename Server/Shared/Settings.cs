@@ -10,5 +10,7 @@ namespace MUD
     {
         public static int passiveSlots = 5;
         public static int activeSlots = 5;
+        public static int armorSlots = 4;
+        public static string startingArea = "Testing Zone";
     }
 }
