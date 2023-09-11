@@ -93,6 +93,7 @@ namespace MUD
             {
                 Turn = 0;
                 Characters = new List<Character>();
+                Players = new List<ushort>();
                 isActive = true;
             }
 
@@ -105,17 +106,18 @@ namespace MUD
                     Players.Add(((Player)c).ID);
                     foreach (Passive p in c.Passives)
                     {
-                        CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
-                        combat.Combat = this;
-                        combat.Character = c;
-                        p.OnCombatEnter(combat);
+                        if (p != null)
+                        {
+                            CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                            combat.Combat = this;
+                            combat.Character = c;
+                            p.OnCombatEnter(combat);
+                        }
                     }
                 }
 
                 if (Characters.Count == 1)
-                {
                     StartTurn();
-                }
             }
 
             public void RemoveCharacter(Character c)
@@ -128,10 +130,13 @@ namespace MUD
 
                     foreach (Passive p in c.Passives)
                     {
-                        CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
-                        combat.Combat = this;
-                        combat.Character = c;
-                        p.OnCombatExit(combat);
+                        if (p != null)
+                        {
+                            CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                            combat.Combat = this;
+                            combat.Character = c;
+                            p.OnCombatExit(combat);
+                        }
                     }
                 }
             }
@@ -148,10 +153,13 @@ namespace MUD
 
                         foreach (Passive p in character.Passives)
                         {
-                            CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
-                            combat.Combat = this;
-                            combat.Character = character;
-                            p.OnCombatEnter(combat);
+                            if (p != null)
+                            {
+                                CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                                combat.Combat = this;
+                                combat.Character = character;
+                                p.OnCombatEnter(combat);
+                            }
                         }
                     }
                 }
@@ -167,10 +175,13 @@ namespace MUD
 
                         foreach (Passive p in character.Passives)
                         {
-                            CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
-                            combat.Combat = this;
-                            combat.Character = character;
-                            p.OnCombatExit(combat);
+                            if (p != null)
+                            {
+                                CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                                combat.Combat = this;
+                                combat.Character = character;
+                                p.OnCombatExit(combat);
+                            }
                         }
                     }
                 }
