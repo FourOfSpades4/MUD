@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using DarkRift;
 using MUD.Ability;
 using MUD.Net;
+using MUD.Items;
 
 namespace MUD.Characters
 {
@@ -19,7 +20,7 @@ namespace MUD.Characters
         public int PassiveSlots { get; private set; }
         public int ActiveSlots { get; private set; }
 
-        public Player(string username, ushort id, int passive, int active)
+        public Player(string username, ushort id, int passive, int active, int armor) : base()
         {
             Name = username;
             ID = id;
@@ -31,6 +32,7 @@ namespace MUD.Characters
 
             Passives = new Passive[PassiveSlots];
             Actives = new Active[ActiveSlots];
+            Armor = new Item[armor];
         }
 
         public void SetPassiveSlots(int passive)
@@ -62,18 +64,28 @@ namespace MUD.Characters
         {
             List<NetPassive> passives = new List<NetPassive>();
             List<NetActive> actives = new List<NetActive>();
+            List<NetItem> armor = new List<NetItem>();
 
             foreach (Passive passive in Passives)
             {
-                passives.Add(passive.Net());
+                if (passive != null)
+                    passives.Add(passive.Net());
             }
 
             foreach (Active active in Actives)
             {
-                actives.Add(active.Net());
+                if (active != null)
+                    actives.Add(active.Net());
             }
 
-            return NetPlayer.CreatePlayer(Name, passives.ToArray(), actives.ToArray());
+            foreach (Item item in Armor)
+            {
+                if (item != null)
+                    armor.Add(item.Net());
+            }
+
+            return NetPlayer.CreatePlayer(Name, 
+                passives.ToArray(), actives.ToArray(), armor.ToArray());
         }
         public void UpdateCombatStatus(bool inCombat)
         {

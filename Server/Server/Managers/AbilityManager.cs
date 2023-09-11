@@ -25,6 +25,24 @@ namespace MUD.Managers
             actives = new Dictionary<int, Active>();
             passives.Add(0, new Passive(0, "", ""));
             actives.Add(0, new Active(0, "", "", 0, 0));
+
+            CreateAbilitySet();
+        }
+
+        public void CreateAbilitySet()
+        {
+            abilities = new List<AbilitySet>();
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                foreach (var type in asm.GetTypes())
+                {
+                    if (type.GetInterface("AbilitySet") == typeof(AbilitySet))
+                    {
+                        Server.logger.Info("Loaded Abilities: " + type.Name);
+                        abilities.Add((AbilitySet)Activator.CreateInstance(type, new object[] {  }));
+                    }
+                }
+            }
         }
 
         public void AddPassive(int id, Passive passive)

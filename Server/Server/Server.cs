@@ -50,7 +50,7 @@ namespace MUD
             Database.instance.UpdateEnemyManager(EnemyManager.instance);
 
             if (Database.instance.GetPlayerID("FourOfSpades") == -1)
-                Database.instance.AddPlayerCredentials("FourOfSpades", Authentication.Hash("!"));
+                Database.instance.AddPlayerCredentials("FourOfSpades", Authentication.Hash("!!!!!!"));
         }
 
         private static void UpdateRoomModifers(object source, ElapsedEventArgs e)

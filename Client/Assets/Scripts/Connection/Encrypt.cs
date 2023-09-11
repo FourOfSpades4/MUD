@@ -4,8 +4,9 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Serialization;
+using MUD.Encryption;
 
-namespace MUD
+namespace MUD.Encryption
 {
     public class RSAEncryptionPublic : RSAEncryption {
         public static RSAEncryptionPublic Instance { get; private set; }

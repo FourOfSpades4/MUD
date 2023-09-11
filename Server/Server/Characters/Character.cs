@@ -57,5 +57,12 @@ namespace MUD.Characters
             }
             return false;
         }
+
+        public virtual int TakeDamage(int damage)
+        {
+            Health -= damage;
+
+            return damage;
+        }
     }
 }

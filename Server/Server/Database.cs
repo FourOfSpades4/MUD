@@ -1,20 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Data.SQLite;
-using DarkRift.Server;
-using System.Xml.Linq;
-using System.Numerics;
-using System.Data;
-using System.Diagnostics;
-using System.Threading.Channels;
-using MUD.Net;
-using MUD.Managers;
-using MUD.Ability;
-using MUD.Items;
+﻿using MUD.Ability;
 using MUD.Characters;
+using MUD.Items;
+using MUD.Managers;
+using MUD.Net;
+using System.Data.SQLite;
 
 namespace MUD.SQL
 {
@@ -932,6 +921,36 @@ namespace MUD.SQL
                         Enemy enemy = new Enemy(name, description, 
                             NetDrops.CreateDrops(itemDrops.ToArray(), passiveDrops.ToArray(), activeDrops.ToArray()), 
                             enterCombatText, enterRoomText);
+
+                        // Get Actives
+                        var abilityCommand = data.CreateCommand();
+                        abilityCommand.CommandText =
+                        @"
+                            SELECT activeID, activeSlot
+                            FROM enemyActives
+                            WHERE enemyID = $enemyID
+                        ";
+                        abilityCommand.Parameters.AddWithValue("$enemyID", enemyID);
+
+                        using (var activeReader = abilityCommand.ExecuteReader())
+                            while (activeReader.Read())
+                                enemy.Equip(activeReader.GetInt32(1), AbilityManager.instance.GetActive(activeReader.GetInt32(0)));
+
+
+                        // Get Passives
+                        abilityCommand = data.CreateCommand();
+                        abilityCommand.CommandText =
+                        @"
+                            SELECT passiveID, passiveSlot
+                            FROM enemyPassives
+                            WHERE enemyID = $enemyID
+                        ";
+                        abilityCommand.Parameters.AddWithValue("$enemyID", enemyID);
+
+                        using (var activeReader = abilityCommand.ExecuteReader())
+                            while (activeReader.Read())
+                                enemy.Equip(activeReader.GetInt32(1), AbilityManager.instance.GetPassive(activeReader.GetInt32(0)));
+                        
                         enemyManager.AddEnemy(roomID, enemy);
                     }
                 }
@@ -971,10 +990,16 @@ namespace MUD.SQL
                         // TODO
                         int itemID = reader.GetInt32(0);
 
+                        Passive passive = null;
+                        Active active = null;
+                        if (!reader.IsDBNull(5))
+                            passive = AbilityManager.instance.GetPassive(reader.GetInt32(5));
+                        if (!reader.IsDBNull(6))
+                            active = AbilityManager.instance.GetActive(reader.GetInt32(6));
+
                         Item item = new Item(reader.GetString(1), reader.GetString(2),
-                            (ItemType)reader.GetInt32(3), reader.GetBoolean(4), 
-                            AbilityManager.instance.GetPassive(reader.GetInt32(5)), 
-                            AbilityManager.instance.GetActive(reader.GetInt32(6)),
+                            (ItemType)reader.GetInt32(3), reader.GetBoolean(4),
+                            passive, active,
                             reader.GetInt32(7), reader.GetInt32(8), reader.GetDouble(9), reader.GetInt32(10), 
                             reader.GetDouble(11), reader.GetDouble(12), reader.GetDouble(13), reader.GetDouble(14),
                             reader.GetDouble(15), reader.GetInt32(16), reader.GetDouble(17), reader.GetDouble(18), 
@@ -1037,6 +1062,47 @@ namespace MUD.SQL
             }
         }
 
+        public void UpdatePlayerAbilitiesFromDB(Player player)
+        {
+            lock (data)
+            {
+                data.Open();
+
+                // Get Actives
+                var command = data.CreateCommand();
+                command.CommandText =
+                @"
+                    SELECT playerActives.activeID, playerActives.activeSlot
+                    FROM playerActives
+                    JOIN players ON players.playerID = playerActives.playerID
+                    WHERE players.username = $user
+                ";
+                command.Parameters.AddWithValue("$user", player.Name);
+
+                using (var reader = command.ExecuteReader())
+                    while (reader.Read())
+                        player.Equip(reader.GetInt32(1), AbilityManager.instance.GetActive(reader.GetInt32(0)));
+
+
+                // Get Passives
+                command = data.CreateCommand();
+                command.CommandText =
+                @"
+                    SELECT playerPassives.passiveID, playerPassives.passiveSlot
+                    FROM playerPassives
+                    JOIN players ON players.playerID = playerPassives.playerID
+                    WHERE players.username = $user
+                ";
+                command.Parameters.AddWithValue("$user", player.Name);
+
+                using (var reader = command.ExecuteReader())
+                    while (reader.Read())
+                        player.Equip(reader.GetInt32(1), AbilityManager.instance.GetPassive(reader.GetInt32(0)));
+
+                data.Close();
+            }
+        }
+
 
 
         // TODO
@@ -1045,22 +1111,30 @@ namespace MUD.SQL
             // Get Title
             player.SetTitle(GetTitleFromPlayer(player.Name));
 
-            // Get Slots
-            var command = data.CreateCommand();
-            command.CommandText =
-            @"
-                    SELECT activeSlots, passiveSlots
-                    FROM players
-                    WHERE username = $user
-                ";
-            command.Parameters.AddWithValue("$user", player.Name);
-
-            using (var reader = command.ExecuteReader())
+            lock (data)
             {
-                reader.Read();
-                player.SetActiveSlots(reader.GetInt32(0));
-                player.SetPassiveSlots(reader.GetInt32(1));
+                data.Open();
+                // Get Slots
+                var command = data.CreateCommand();
+                command.CommandText =
+                @"
+                        SELECT activeSlots, passiveSlots
+                        FROM players
+                        WHERE username = $user
+                    ";
+                command.Parameters.AddWithValue("$user", player.Name);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    reader.Read();
+                    player.SetActiveSlots(reader.GetInt32(0));
+                    player.SetPassiveSlots(reader.GetInt32(1));
+                }
+
+                data.Close();
             }
+
+            UpdatePlayerAbilitiesFromDB(player);
         }
 
         public void GetInventoryFromPlayer(string player)

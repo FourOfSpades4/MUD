@@ -17,6 +17,11 @@ namespace MUD
             public static CombatManager instance = new CombatManager();
             private Dictionary<int, CombatInstance> combats;
 
+            public CombatManager()
+            {
+                combats = new Dictionary<int, CombatInstance>();
+            }
+
 
             public void TickCombats()
             {
@@ -41,6 +46,11 @@ namespace MUD
                 {
                     instance = new CombatInstance();
                     combats[roomID] = instance;
+
+                    List<Enemy> enemies = EnemyManager.instance.GetEnemies(roomID);
+
+                    foreach (Enemy enemy in enemies)
+                        instance.AddCharacter(enemy);
                 }
 
                 player.UpdateCombatStatus(true);
@@ -91,7 +101,21 @@ namespace MUD
                 Characters.Add(c);
 
                 if (c.Type == CharacterType.PLAYER)
+                {
                     Players.Add(((Player)c).ID);
+                    foreach (Passive p in c.Passives)
+                    {
+                        CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                        combat.Combat = this;
+                        combat.Character = c;
+                        p.OnCombatEnter(combat);
+                    }
+                }
+
+                if (Characters.Count == 1)
+                {
+                    StartTurn();
+                }
             }
 
             public void RemoveCharacter(Character c)
@@ -99,7 +123,17 @@ namespace MUD
                 Characters.Remove(c);
 
                 if (c.Type == CharacterType.PLAYER)
+                {
                     Players.Remove(((Player)c).ID);
+
+                    foreach (Passive p in c.Passives)
+                    {
+                        CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                        combat.Combat = this;
+                        combat.Character = c;
+                        p.OnCombatExit(combat);
+                    }
+                }
             }
 
             public void AddCharacters(List<Character> c)
@@ -107,22 +141,100 @@ namespace MUD
                 Characters.AddRange(c);
 
                 foreach (Character character in c)
+                {
                     if (character.Type == CharacterType.PLAYER)
+                    {
                         Players.Add(((Player)character).ID);
+
+                        foreach (Passive p in character.Passives)
+                        {
+                            CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                            combat.Combat = this;
+                            combat.Character = character;
+                            p.OnCombatEnter(combat);
+                        }
+                    }
+                }
             }
 
             public void EndCombat()
             {
                 foreach (Character character in Characters)
+                {
                     if (character.Type == CharacterType.PLAYER)
+                    {
                         ((Player)character).UpdateCombatStatus(false);
+
+                        foreach (Passive p in character.Passives)
+                        {
+                            CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                            combat.Combat = this;
+                            combat.Character = character;
+                            p.OnCombatExit(combat);
+                        }
+                    }
+                }
             }
 
             public void TickTurn()
             {
                 TurnTimeRemaining -= 1;
 
+                if (TurnTimeRemaining <= 0)
+                {
+                    NextTurn();
+                }
+
                 // PlayerManager.instance.SendToClients(Players, Tags)
+            }
+
+            public void NextTurn()
+            {
+                Turn = (Turn + 1) % Characters.Count;
+                TurnTimeRemaining = Settings.turnTicks;
+
+                StartTurn();
+            }
+
+            public void StartTurn()
+            {
+                Character character = Characters[Turn];
+                Server.logger.Info("Turn Starting: " + character.Name);
+
+                foreach (Passive p in character.Passives)
+                {
+                    if (p != null)
+                    {
+                        CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                        combat.Combat = this;
+                        combat.Character = character;
+                        p.OnTurnStart(combat);
+                    }
+                }
+
+                if (character.Type == CharacterType.ENEMY)
+                {
+                    // TODO
+
+                    CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+
+                    combat.Combat = this;
+
+                    combat.Character = character;
+
+                    combat.Ability = character.Actives[0];
+
+                    combat.Targets = new List<Character>();
+                    foreach (Character c in Characters)
+                    {
+                        if (c != character)
+                        {
+                            combat.Targets.Add(c);
+                        }
+                    }
+
+                    character.Actives[0].OnCast(combat);
+                }
             }
         }
 

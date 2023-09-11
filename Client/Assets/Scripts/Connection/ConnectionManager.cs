@@ -4,8 +4,9 @@ using System.Linq;
 using DarkRift;
 using DarkRift.Client;
 using DarkRift.Client.Unity;
-using MUD;
 using MUD.Tags;
+using MUD.Net;
+using MUD.Encryption;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -68,14 +69,14 @@ namespace NetworkConnection
                         Debug.Log(chat.chatMessage);
                     }
                     if (m.Tag == (ushort)Tags.PLAYER_UPDATE) {
-                        Player player = reader.ReadSerializable<Player>();
+                        NetPlayer player = reader.ReadSerializable<NetPlayer>();
                     }
                     if (m.Tag == (ushort)Tags.AREA) {
-                        Area area = reader.ReadSerializable<Area>();
+                        NetArea area = reader.ReadSerializable<NetArea>();
                         SceneHandler.Instance.UpdateArea(area.ToString());
                     }
                     if (m.Tag == (ushort)Tags.ROOM) {
-                        Room room = reader.ReadSerializable<Room>();
+                        NetRoom room = reader.ReadSerializable<NetRoom>();
                         SceneHandler.Instance.UpdateScene(room.ToString());
                     }
                 }

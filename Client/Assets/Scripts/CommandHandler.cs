@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using DarkRift;
 using DarkRift.Client;
-using MUD;
+using MUD.Net;
 using MUD.Tags;
 using UnityEngine;
 using NetworkConnection;
@@ -19,7 +19,7 @@ namespace Input {
 
         public void SubmitCommand(string data) {
             if (data != "") {
-                Command command = new Command();
+                NetCommand command = new NetCommand();
                 command.command = data;
                 command.token = ConnectionManager.Instance.Token;
                 using (Message message = Message.Create((ushort)Tags.COMMAND, command)) {

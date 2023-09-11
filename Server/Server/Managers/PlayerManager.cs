@@ -29,7 +29,7 @@ namespace MUD.Managers
         // Update the player token, and add the player from the database to the dictionary of logged in players.
         public void LoginPlayer(IClient client, string username, ushort id, string token)
         {
-            Player player = new Player(username, id, Settings.activeSlots, Settings.passiveSlots);
+            Player player = new Player(username, id, Settings.activeSlots, Settings.passiveSlots, Settings.armorSlots);
             player.SetToken(token);
             Database.instance.UpdatePlayerFromDB(player);
             players[id] = new Tuple<IClient, Player>(client, player);
@@ -70,7 +70,8 @@ namespace MUD.Managers
         {
             foreach (Passive passive in player.Passives)
             {
-                 action(passive);
+                if (passive != null)
+                    action(passive);
             }
         }
 
@@ -191,13 +192,18 @@ namespace MUD.Managers
 
         public void OnMoveToRoom(Player player)
         {
+            Console.WriteLine("Entering...");
             CombatInstanceEventArgs c = new CombatInstanceEventArgs();
             ForEach(player, (Passive p) => p.OnRoomEnter(c));
 
+            Console.WriteLine("Obtaining Room...");
             NetRoom room = Database.instance.GetRoomFromPlayer(player.Name);
 
-            if (EnemyManager.instance.GetEnemies(room.ID).Count > 0)
+            Console.WriteLine("Obtaining Enemies...");
+            List<Enemy> enemies = EnemyManager.instance.GetEnemies(room.ID);
+            if (enemies != null && enemies.Count > 0)
             {
+                Console.WriteLine("Starting Combat...");
                 CombatManager.instance.StartCombat(player, room.ID);
             }
         }

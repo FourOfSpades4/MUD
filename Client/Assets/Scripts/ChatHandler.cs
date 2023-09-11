@@ -4,6 +4,7 @@ using DarkRift;
 using DarkRift.Client;
 using MUD;
 using MUD.Tags;
+using MUD.Net;
 using UnityEngine;
 using NetworkConnection;
 using TMPro;
@@ -19,7 +20,7 @@ namespace Input {
 
         public void SendChat(string data) {
             if (data != "") {
-                Chat chat = new Chat();
+                NetChat chat = new NetChat();
                 chat.chatMessage = data;
                 chat.token = ConnectionManager.Instance.Token;
                 using (Message message = Message.Create((ushort)Tags.CHAT, chat)) {

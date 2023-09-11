@@ -25,7 +25,6 @@ namespace MUD.Net
         public NetCharacter()
         {
             Health = 100;
-            Armor = new NetItem[Settings.armorSlots];
         }
         public virtual void Deserialize(DeserializeEvent e)
         {

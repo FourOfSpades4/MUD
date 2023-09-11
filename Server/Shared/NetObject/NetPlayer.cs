@@ -14,7 +14,7 @@ namespace MUD.Net
         public string Title { get; private set; }
 
         public static NetPlayer CreatePlayer(string username, 
-            NetPassive[] passives, NetActive[] actives)
+            NetPassive[] passives, NetActive[] actives, NetItem[] armor)
         {
             NetPlayer p = new NetPlayer();
 
@@ -24,6 +24,7 @@ namespace MUD.Net
 
             p.Passives = passives;
             p.Actives = actives;
+            p.Armor = armor;
 
             return p;
         }
@@ -42,6 +43,8 @@ namespace MUD.Net
         public override void Serialize(SerializeEvent e)
         {
             base.Serialize(e);
+
+            Console.WriteLine("Title");
 
             e.Writer.Write(Title);
         }

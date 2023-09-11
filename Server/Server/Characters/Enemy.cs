@@ -20,7 +20,7 @@ namespace MUD.Characters
         public NetDrops InstanceDrops { get; private set; }
 
         public Enemy(string name, string description,
-            NetDrops drops, string enterCombatText = "", string roomEnterText = "") 
+            NetDrops drops, string enterCombatText = "", string roomEnterText = "") : base()
         {
             Name = name;
             Description = description;

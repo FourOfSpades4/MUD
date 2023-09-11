@@ -56,6 +56,7 @@ namespace MUD.Ability
         public event EventHandler<CombatInstanceEventArgs> RoomEnter;
 
         public event EventHandler<CombatInstanceEventArgs> CombatEnter;
+        public event EventHandler<CombatInstanceEventArgs> CombatExit;
 
         public event EventHandler<CombatInstanceEventArgs> BeforeAttack;
         public event EventHandler<CombatInstanceEventArgs> AfterAttack;
@@ -96,6 +97,15 @@ namespace MUD.Ability
         public void OnCombatEnter(CombatInstanceEventArgs args)
         {
             EventHandler<CombatInstanceEventArgs> handler = CombatEnter;
+            if (handler != null)
+            {
+                handler(this, args);
+            }
+        }
+
+        public void OnCombatExit(CombatInstanceEventArgs args)
+        {
+            EventHandler<CombatInstanceEventArgs> handler = CombatExit;
             if (handler != null)
             {
                 handler(this, args);
