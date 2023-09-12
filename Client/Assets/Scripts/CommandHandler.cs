@@ -18,6 +18,7 @@ namespace Input {
         }
 
         public void SubmitCommand(string data) {
+            // Aliases - TODO
             if (data != "") {
                 NetCommand command = new NetCommand();
                 command.command = data;

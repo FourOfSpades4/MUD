@@ -64,5 +64,10 @@ namespace MUD.Characters
 
             return damage;
         }
+
+        public virtual void Die()
+        {
+
+        }
     }
 }

@@ -102,5 +102,12 @@ namespace MUD.Characters
                 Actives[2].ID + " | " + Actives[3].ID + " | " +
                 Actives[4].ID;
         }
+
+        public override void Die()
+        {
+            base.Die();
+
+            Server.logger.Info(Name + " was killed.");
+        }
     }
 }

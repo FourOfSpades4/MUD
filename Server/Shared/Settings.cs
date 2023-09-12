@@ -12,6 +12,7 @@ namespace MUD
         public static int activeSlots = 5;
         public static int armorSlots = 4;
         public static string startingArea = "Testing Zone";
-        public static int turnTicks = 20 * 10;
+        public static int turnTicks = 20 * 3;
+        public static int enemyTurnTime = 20 * 1;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using MUD.Ability;
 using MUD.Characters;
+using MUD.Encryption;
 using MUD.Items;
 using MUD.Managers;
 using MUD.Net;
@@ -376,6 +377,7 @@ namespace MUD.SQL
                         authID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                         username TEXT NOT NULL,
                         password TEXT NOT NULL,
+                        salt TEXT NOT NULL,
                         playerID int NOT NULL,
 
                         FOREIGN KEY (playerID) 
@@ -458,12 +460,33 @@ namespace MUD.SQL
         public bool VerifyPlayerCredentials(string user, string pass)
         {
             bool playerExists = false;
+            string salt = "";
 
             lock (data)
             {
                 data.Open();
 
                 var command = data.CreateCommand();
+                command.CommandText =
+                @"
+                    SELECT salt
+                    FROM users
+                    WHERE username = $user
+                ";
+                command.Parameters.AddWithValue("$user", user);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    if (reader.HasRows)
+                    {
+                        reader.Read();
+                        salt = reader.GetString(0);
+                    }
+                }
+
+                pass = Authentication.Hash(pass + salt);
+
+                command = data.CreateCommand();
                 command.CommandText =
                 @"
                     SELECT username
@@ -491,7 +514,7 @@ namespace MUD.SQL
         // Add Username and Password (Hash) to Database
         // Create Player In Database
         // TODO
-        public void AddPlayerCredentials(string user, string passHash)
+        public void AddPlayerCredentials(string user, string passHash, string salt)
         {
             int player = -1;
 
@@ -533,11 +556,12 @@ namespace MUD.SQL
 
                 command.CommandText =
                 @"
-                    INSERT INTO users (username, password, playerID)
-                    VALUES ($user, $pass, $playerID)
+                    INSERT INTO users (username, password, salt, playerID)
+                    VALUES ($user, $pass, $salt, $playerID)
                 ";
                 command.Parameters.AddWithValue("$user", user);
                 command.Parameters.AddWithValue("$pass", passHash);
+                command.Parameters.AddWithValue("$salt", salt);
                 command.Parameters.AddWithValue("$playerID", player);
                 command.ExecuteNonQuery();
 

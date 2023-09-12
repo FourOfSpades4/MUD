@@ -11,8 +11,6 @@ namespace MUD.Encryption
 {
     internal class Authentication
     {
-        public static Authentication instance = new Authentication();
-        
         // SHA256 Hash to Hash Passwords
         public static string Hash(string str)
         {
@@ -22,7 +20,7 @@ namespace MUD.Encryption
         // Query Database for username and password verification
         public static bool VerifyCredentials(string user, string pass)
         {
-            return Database.instance.VerifyPlayerCredentials(user, Hash(pass));
+            return Database.instance.VerifyPlayerCredentials(user, pass);
         }
 
         // Generate Random Token
@@ -35,6 +33,15 @@ namespace MUD.Encryption
 
                 return Convert.ToBase64String(bytes);
             }
+        }
+
+        public static string GetSalt()
+        {
+            var random = new RNGCryptoServiceProvider();
+            int max_length = 32;
+            byte[] salt = new byte[max_length];
+            random.GetNonZeroBytes(salt);
+            return Convert.ToBase64String(salt);
         }
     }
 }

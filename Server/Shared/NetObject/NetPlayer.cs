@@ -44,8 +44,6 @@ namespace MUD.Net
         {
             base.Serialize(e);
 
-            Console.WriteLine("Title");
-
             e.Writer.Write(Title);
         }
     }

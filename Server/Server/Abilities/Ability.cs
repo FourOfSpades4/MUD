@@ -51,6 +51,7 @@ namespace MUD.Ability
         public int ID { get; protected set; }
         public string Name { get; protected set; }
         public string Description { get; protected set; }
+        public int Uses { get; set; }
 
 
         public event EventHandler<CombatInstanceEventArgs> RoomEnter;

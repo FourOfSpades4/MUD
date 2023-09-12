@@ -192,18 +192,14 @@ namespace MUD.Managers
 
         public void OnMoveToRoom(Player player)
         {
-            Console.WriteLine("Entering...");
             CombatInstanceEventArgs c = new CombatInstanceEventArgs();
             ForEach(player, (Passive p) => p.OnRoomEnter(c));
 
-            Console.WriteLine("Obtaining Room...");
             NetRoom room = Database.instance.GetRoomFromPlayer(player.Name);
 
-            Console.WriteLine("Obtaining Enemies...");
             List<Enemy> enemies = EnemyManager.instance.GetEnemies(room.ID);
             if (enemies != null && enemies.Count > 0)
             {
-                Console.WriteLine("Starting Combat...");
                 CombatManager.instance.StartCombat(player, room.ID);
             }
         }

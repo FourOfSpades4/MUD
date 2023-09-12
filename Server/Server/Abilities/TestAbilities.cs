@@ -21,14 +21,36 @@ namespace MUD.Ability
                 c.TakeDamage(damage);
         }
 
+        public static void HealDamage(object sender, CombatInstanceEventArgs args, int health)
+        {
+            Passive passive = (Passive)sender;
+
+            if (passive.Uses > 0)
+            {
+                Server.logger.Info("Lifesaver Passive Triggered");
+                args.Character.TakeDamage(-health);
+                passive.Uses -= 1;
+            }
+        }
+
+        public static void SetUses(object sender, CombatInstanceEventArgs args, int uses)
+        {
+            Passive passive = (Passive)sender;
+            passive.Uses = uses;
+        }
+
         public void UpdatePassive(int id, Passive passive)
         {
             if (id == 1)
                 passive.CombatEnter += (obj, combatInstance) => Server.logger.Info("Passive 1 Triggered");
             if (id == 2)
-                passive.TurnStart += (obj, combatInstance) => Server.logger.Info("Passive 2 Triggered");
+            {
+                passive.Death += (obj, combatInstance) => HealDamage(obj, combatInstance, 25);
+                passive.CombatEnter += (obj, combatInstance) => SetUses(obj, combatInstance, 2);
+                passive.CombatExit += (obj, combatInstance) => SetUses(obj, combatInstance, 2);
+            }
             if (id == 3)
-                passive.TurnEnd += (obj, combatInstance) => Server.logger.Info("Passive 3 Triggered");
+                passive.TurnEnd += (obj, combatInstance) => Server.logger.Info(combatInstance.Character.Health.ToString());
         }
 
         public void UpdateActive(int id, Active active)

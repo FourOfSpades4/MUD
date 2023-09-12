@@ -48,6 +48,24 @@ namespace MUD.Managers
         public void AddPassive(int id, Passive passive)
         {
             passives[id] = passive;
+            Type foundSet = null;
+
+            foreach (AbilitySet abilitySet in abilities)
+            {
+                if (abilitySet.HasPassive(id))
+                {
+                    if (foundSet != null)
+                    {
+                        Server.logger.Warning(String.Format("{0}: Passive with ID {1} already declared in {2}", 
+                            abilitySet.GetType().Name, id, foundSet.Name));
+                    }
+                    else
+                    {
+                        foundSet = abilitySet.GetType();
+                        abilitySet.UpdatePassive(id, passive);
+                    }
+                }
+            }
         }
 
         public Passive GetPassive(int id)
@@ -62,6 +80,24 @@ namespace MUD.Managers
         public void AddActive(int id, Active active)
         {
             actives[id] = active;
+            Type foundSet = null;
+
+            foreach (AbilitySet abilitySet in abilities)
+            {
+                if (abilitySet.HasActive(id))
+                {
+                    if (foundSet != null)
+                    {
+                        Server.logger.Warning(String.Format("{0}: Active with ID {1} already declared in {2}",
+                            abilitySet.GetType().Name, id, foundSet.Name));
+                    }
+                    else
+                    {
+                        foundSet = abilitySet.GetType();
+                        abilitySet.UpdateActive(id, active);
+                    }
+                }
+            }
         }
 
         public Active GetActive(int id)
@@ -80,5 +116,7 @@ namespace MUD.Ability {
     {
         public void UpdatePassive(int id, Passive passive);
         public bool HasPassive(int id);
+        public void UpdateActive(int id, Active active);
+        public bool HasActive(int id);
     }
 }

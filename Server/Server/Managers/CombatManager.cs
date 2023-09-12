@@ -27,7 +27,7 @@ namespace MUD
             {
                 foreach (KeyValuePair<int, CombatInstance> instance in combats)
                 {
-                    if (!instance.Value.isActive)
+                    if (instance.Value.isActive == -1)
                         combats.Remove(instance.Key);
 
                     instance.Value.TickTurn();
@@ -55,6 +55,7 @@ namespace MUD
 
                 player.UpdateCombatStatus(true);
                 instance.AddCharacter(player);
+                instance.StartCombat();
             }
 
             public void EndCombat(Player player, int roomID)
@@ -62,8 +63,29 @@ namespace MUD
                 if (!combats.ContainsKey(roomID))
                     return;
 
+                foreach (Passive p in player.Passives)
+                {
+                    if (p != null)
+                    {
+                        CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                        combat.Combat = combats[roomID];
+                        combat.Character = player;
+                        p.OnCombatExit(combat);
+                    }
+                }
+
                 combats[roomID].RemoveCharacter(player);
+
                 player.UpdateCombatStatus(false);
+            }
+
+            public void EndCombat(int roomID)
+            {
+                if (!combats.ContainsKey(roomID))
+                    return;
+
+                combats[roomID].EndCombat();
+                combats.Remove(roomID);
             }
 
             public void ForceEndCombat(Player player)
@@ -71,11 +93,24 @@ namespace MUD
                 foreach (CombatInstance combatInstance in combats.Values)
                 {
                     combatInstance.RemoveCharacter(player);
+
+                    foreach (Passive p in player.Passives)
+                    {
+                        if (p != null)
+                        {
+                            CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                            combat.Combat = combatInstance;
+                            combat.Character = player;
+                            p.OnCombatExit(combat);
+                        }
+                    }
                 }
+
                 player.UpdateCombatStatus(false);
             }
         }
     }
+
     namespace Combat
     {
         public class CombatInstance
@@ -85,7 +120,7 @@ namespace MUD
             List<Character> Characters { get; set; }
             List<ushort> Players { get; set; }
 
-            public bool isActive { get; }
+            public int isActive { get; private set; }
 
 
 
@@ -94,7 +129,14 @@ namespace MUD
                 Turn = 0;
                 Characters = new List<Character>();
                 Players = new List<ushort>();
-                isActive = true;
+                isActive = 0;
+            }
+
+            public void StartCombat()
+            {
+                isActive = 1;
+                TurnTimeRemaining = Settings.turnTicks;
+                StartTurn();
             }
 
             public void AddCharacter(Character c)
@@ -115,9 +157,6 @@ namespace MUD
                         }
                     }
                 }
-
-                if (Characters.Count == 1)
-                    StartTurn();
             }
 
             public void RemoveCharacter(Character c)
@@ -185,6 +224,8 @@ namespace MUD
                         }
                     }
                 }
+
+                isActive = -1;
             }
 
             public void TickTurn()
@@ -193,7 +234,40 @@ namespace MUD
 
                 if (TurnTimeRemaining <= 0)
                 {
+                    EndTurn();
                     NextTurn();
+                }
+
+                // Enemy Turn
+                if (TurnTimeRemaining <= (Settings.turnTicks - Settings.enemyTurnTime))
+                {
+                    Character character = Characters[Turn];
+                    if (character.Type == CharacterType.ENEMY)
+                    {
+                        // TODO
+
+                        CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+
+                        combat.Combat = this;
+
+                        combat.Character = character;
+
+                        combat.Ability = character.Actives[0];
+
+                        combat.Targets = new List<Character>();
+                        foreach (Character c in Characters)
+                        {
+                            if (c != character)
+                            {
+                                combat.Targets.Add(c);
+                            }
+                        }
+
+                        character.Actives[0].OnCast(combat);
+
+                        EndTurn();
+                        NextTurn();
+                    }
                 }
 
                 // PlayerManager.instance.SendToClients(Players, Tags)
@@ -222,29 +296,45 @@ namespace MUD
                         p.OnTurnStart(combat);
                     }
                 }
+            }
 
-                if (character.Type == CharacterType.ENEMY)
+            public void EndTurn()
+            {
+                Character character = Characters[Turn];
+
+                foreach (Passive p in character.Passives)
                 {
-                    // TODO
-
-                    CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
-
-                    combat.Combat = this;
-
-                    combat.Character = character;
-
-                    combat.Ability = character.Actives[0];
-
-                    combat.Targets = new List<Character>();
-                    foreach (Character c in Characters)
+                    if (p != null)
                     {
-                        if (c != character)
+                        CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                        combat.Combat = this;
+                        combat.Character = character;
+                        p.OnTurnEnd(combat);
+                    }
+                }
+
+                for (int i = 0; i < Characters.Count; i++)
+                {
+                    character = Characters[i];
+                    if (character.Health <= 0)
+                    {
+                        foreach (Passive p in character.Passives)
                         {
-                            combat.Targets.Add(c);
+                            if (p != null)
+                            {
+                                CombatInstanceEventArgs combat = new CombatInstanceEventArgs();
+                                combat.Combat = this;
+                                combat.Character = character;
+                                p.OnDeath(combat);
+                            }
+                        }
+
+                        if (Characters[i].Health <= 0)
+                        {
+                            Characters[i].Die();
+                            RemoveCharacter(Characters[i]);
                         }
                     }
-
-                    character.Actives[0].OnCast(combat);
                 }
             }
         }
